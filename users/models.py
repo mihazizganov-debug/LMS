@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+
+from lms.models import Course, Lesson
 
 
 class UserManager(BaseUserManager):
@@ -41,3 +44,24 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
+
+
+class Payment(models.Model):
+    PAYMENT_METHODS = [
+        ("cash", "Наличные"),
+        ("transfer", "Перевод на счет"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="пользователь")
+    payment_date = models.DateTimeField(auto_now_add=True, verbose_name="дата оплаты")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, verbose_name="оплаченный курс")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=True, blank=True, verbose_name="оплаченный урок")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="сумма оплаты")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, verbose_name="способ оплаты")
+
+    def __str__(self):
+        return f"{self.user.email} - {self.amount} ₽"
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
