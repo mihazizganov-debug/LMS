@@ -8,29 +8,45 @@ API для онлайн-обучения на Django REST Framework.
 - ✅ CRUD для курсов (ViewSet)
 - ✅ CRUD для уроков (Generic классы)
 - ✅ Админ-панель для управления данными
-
+- ✅ Подсчёт количества уроков в курсе (`lessons_count`)
+- ✅ Вывод списка уроков внутри курса
+- ✅ Модель платежей (оплата курсов и уроков)
+- ✅ Фильтрация и сортировка платежей
+- 
 ## Технологии
 
 - Python 3.13
 - Django 6.0.6
 - Django REST Framework 3.17.1
+- django-filter
 - SQLite / PostgreSQL
 - Pillow (для работы с изображениями)
 
 ## Эндпоинты API
 
+| Метод | URL | Описание      |
+|-------|-----|---------------|
+| GET | `/api/courses/` | Список курсов |
+| POST | `/api/courses/` | Создать курс  |
+| GET | `/api/courses/{id}/` | Детали курса (с уроками и количеством)  |
+| PUT/PATCH | `/api/courses/{id}/` | Обновить курс |
+| DELETE | `/api/courses/{id}/` | Удалить курс  |
+| GET | `/api/lessons/` | Список уроков |
+| POST | `/api/lessons/` | Создать урок  |
+| GET | `/api/lessons/{id}/` | Детали урока  |
+| PUT/PATCH | `/api/lessons/{id}/` | Обновить урок |
+| DELETE | `/api/lessons/{id}/` | Удалить урок  |
+
+### Платежи
+
 | Метод | URL | Описание |
 |-------|-----|----------|
-| GET | `/api/courses/` | Список курсов |
-| POST | `/api/courses/` | Создать курс |
-| GET | `/api/courses/{id}/` | Детали курса |
-| PUT/PATCH | `/api/courses/{id}/` | Обновить курс |
-| DELETE | `/api/courses/{id}/` | Удалить курс |
-| GET | `/api/lessons/` | Список уроков |
-| POST | `/api/lessons/` | Создать урок |
-| GET | `/api/lessons/{id}/` | Детали урока |
-| PUT/PATCH | `/api/lessons/{id}/` | Обновить урок |
-| DELETE | `/api/lessons/{id}/` | Удалить урок |
+| GET | `/api/users/payments/` | Список платежей |
+| GET | `/api/users/payments/?course=1` | Фильтр по курсу |
+| GET | `/api/users/payments/?lesson=1` | Фильтр по уроку |
+| GET | `/api/users/payments/?payment_method=transfer` | Фильтр по способу оплаты |
+| GET | `/api/users/payments/?ordering=payment_date` | Сортировка по дате (по возрастанию) |
+| GET | `/api/users/payments/?ordering=-payment_date` | Сортировка по дате (по убыванию) |
 
 ## Структура проекта
 ```
@@ -58,12 +74,15 @@ lms/                                        # Корень проекта
 ├── users/                                  # Приложение пользователей
 │ ├── migrations/                           # Миграции пользователей
 │ │ └── _init_.py
+│ ├── fixtures/                             # Фикстуры для платежей (payments.json)  (новое)
 │ ├── init.py
 │ ├── admin.py                              # Регистрация модели User в админке (кастомный UserAdmin)
 │ ├── apps.py                               # Конфигурация приложения
 │ ├── models.py                             # Кастомная модель User (AbstractBaseUser, авторизация по email)
+│ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)  (новое)
+│ ├── urls.py                               # Маршруты платежей (/payments/)  (новое)
 │ ├── tests.py                              # Тесты (пустой)
-│ └── views.py                              # Контроллеры пользователей (заготовка для доп. заданий)
+│ └── views.py                              # PaymentListView (фильтрация, сортировка)  (новое)
 │
 ├── media/                                  # Загруженные изображения (аватары, превью курсов и уроков)
 ├── static/                                 # Статические файлы (CSS, JS, изображения фона)
@@ -74,7 +93,7 @@ lms/                                        # Корень проекта
 ├── LICENSE                                 # Лицензия MIT
 ├── manage.py                               # Управляющий скрипт Django
 ├── README.md                               # Описание проекта
-└── requirements.txt                        # Зависимости проекта
+└── requirements.txt                        # Зависимости (включая django-filter)
 ```
 
 ## Модели данных
@@ -108,6 +127,17 @@ lms/                                        # Корень проекта
 | preview | ImageField | Превью (загружается в `lessons/`) |
 | video_url | URLField | Ссылка на видео (YouTube, Vimeo и др.) |
 | course | ForeignKey | Связь с курсом (при удалении курса удаляются все уроки) |
+
+### Payment (платеж) — приложение `users`
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| user | ForeignKey | Пользователь |
+| payment_date | DateTimeField | Дата оплаты |
+| course | ForeignKey | Оплаченный курс |
+| lesson | ForeignKey | Оплаченный урок |
+| amount | DecimalField | Сумма |
+| payment_method | CharField | Наличные / Перевод |
 
 ## Установка и запуск
 
