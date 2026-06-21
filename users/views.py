@@ -1,8 +1,11 @@
 from django_filters import rest_framework as filters
-from rest_framework import generics
 
 from .models import Payment
 from .serializers import PaymentSerializer
+from rest_framework import generics
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .models import User
+from .serializers import UserSerializer, UserCreateSerializer
 
 
 class PaymentFilter(filters.FilterSet):
@@ -21,3 +24,21 @@ class PaymentListView(generics.ListAPIView):
     filterset_class = PaymentFilter
     ordering_fields = ["payment_date"]
     ordering = ["-payment_date"]
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserCreateSerializer
+    permission_classes = [AllowAny]  # регистрация доступна всем
+
+
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
