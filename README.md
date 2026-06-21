@@ -5,13 +5,15 @@ API для онлайн-обучения на Django REST Framework.
 ## Функционал
 
 - ✅ Управление пользователями (кастомная модель User)
-- ✅ CRUD для курсов (ViewSet)
-- ✅ CRUD для уроков (Generic классы)
-- ✅ Админ-панель для управления данными
+- ✅ CRUD для курсов (ViewSet) и уроков (Generic)
+- ✅ JWT-авторизация (регистрация, получение токена)
+- ✅ Права доступа: владелец может редактировать свои объекты
+- ✅ Группа "Модератор" (может редактировать любые объекты, но не создавать/удалять)
 - ✅ Подсчёт количества уроков в курсе (`lessons_count`)
 - ✅ Вывод списка уроков внутри курса
 - ✅ Модель платежей (оплата курсов и уроков)
 - ✅ Фильтрация и сортировка платежей
+- ✅ Админ-панель для управления данными
 - 
 ## Технологии
 
@@ -19,10 +21,30 @@ API для онлайн-обучения на Django REST Framework.
 - Django 6.0.6
 - Django REST Framework 3.17.1
 - django-filter
+- JWT (SimpleJWT)
 - SQLite / PostgreSQL
 - Pillow (для работы с изображениями)
 
 ## Эндпоинты API
+
+### Аутентификация
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| POST | `/api/users/create/` | Регистрация пользователя |
+| POST | `/api/token/` | Получение access/refresh токенов |
+| POST | `/api/token/refresh/` | Обновление access-токена |
+
+### Пользователи
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| GET | `/api/users/` | Список пользователей (только авторизованные) |
+| GET | `/api/users/{id}/` | Детали пользователя |
+| PUT/PATCH | `/api/users/{id}/` | Обновить пользователя (только свой профиль) |
+| DELETE | `/api/users/{id}/` | Удалить пользователя |
+
+### Курсы и уроки
 
 | Метод | URL | Описание      |
 |-------|-----|---------------|
@@ -47,6 +69,15 @@ API для онлайн-обучения на Django REST Framework.
 | GET | `/api/users/payments/?payment_method=transfer` | Фильтр по способу оплаты |
 | GET | `/api/users/payments/?ordering=payment_date` | Сортировка по дате (по возрастанию) |
 | GET | `/api/users/payments/?ordering=-payment_date` | Сортировка по дате (по убыванию) |
+
+## Права доступа
+
+| Роль | Создание | Просмотр | Редактирование | Удаление |
+|------|----------|----------|----------------|----------|
+| **Неавторизованный** | ❌ | ❌ | ❌ | ❌ |
+| **Пользователь** | ✅ (свои) | ✅ (свои) | ✅ (свои) | ✅ (свои) |
+| **Модератор** | ❌ | ✅ (все) | ✅ (все) | ❌ |
+| **Администратор** | ✅ | ✅ | ✅ | ✅ |
 
 ## Структура проекта
 ```
@@ -74,15 +105,18 @@ lms/                                        # Корень проекта
 ├── users/                                  # Приложение пользователей
 │ ├── migrations/                           # Миграции пользователей
 │ │ └── _init_.py
-│ ├── fixtures/                             # Фикстуры для платежей (payments.json)  (новое)
+│ ├── fixtures/                             # Фикстуры для платежей 
+│ │ ├── groups.json                         # Группа "Модератор"  (новое) 
+│ │ └── payments.json                       # Платежи для тестов
 │ ├── init.py
 │ ├── admin.py                              # Регистрация модели User в админке (кастомный UserAdmin)
 │ ├── apps.py                               # Конфигурация приложения
 │ ├── models.py                             # Кастомная модель User (AbstractBaseUser, авторизация по email)
-│ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)  (новое)
-│ ├── urls.py                               # Маршруты платежей (/payments/)  (новое)
+│ ├── permissions.py                        # (IsModerator, IsOwner)  (новое)
+│ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)
+│ ├── urls.py                               # Маршруты платежей (/payments/)
 │ ├── tests.py                              # Тесты (пустой)
-│ └── views.py                              # PaymentListView (фильтрация, сортировка)  (новое)
+│ └── views.py                              # PaymentListView (фильтрация, сортировка)
 │
 ├── media/                                  # Загруженные изображения (аватары, превью курсов и уроков)
 ├── static/                                 # Статические файлы (CSS, JS, изображения фона)
@@ -157,22 +191,57 @@ pip install -r requirements.txt
 4.Применить миграции
 python manage.py migrate
 
-5. Создать суперпользователя
+5. Загрузить фикстуры
+python manage.py loaddata users/fixtures/groups.json
+python manage.py loaddata users/fixtures/payments.json
+
+6. Создать суперпользователя
 python manage.py createsuperuser
 Email: admin@example.com
 
 Password: admin1234
 
-6. Запустить сервер
+7. Запустить сервер
 python manage.py runserver
 
 
-7. Открыть в браузере
+8. Открыть в браузере
 Страница	URL
 Корень API	http://127.0.0.1:8000/api/
 Список курсов	http://127.0.0.1:8000/api/courses/
 Список уроков	http://127.0.0.1:8000/api/lessons/
 Админ-панель	http://127.0.0.1:8000/admin/
+
+9. Проверка через Postman
+Регистрация:
+
+POST /api/users/create/
+{
+    "email": "test@example.com",
+    "password": "test1234"
+}
+
+Получение токена:
+
+POST /api/token/
+{
+    "email": "test@example.com",
+    "password": "test1234"
+}
+
+Создание курса (с токеном):
+
+POST /api/courses/
+Authorization: Bearer <access-token>
+{
+    "name": "Мой курс",
+    "description": "Описание"
+}
+
+Редактирование чужого курса → 403 Forbidden
+
+PUT /api/courses/1/
+Authorization: Bearer <access-token-другого-пользователя>
 
 Лицензия
 MIT License
