@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
 from lms.models import Course, Lesson
@@ -21,7 +21,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, verbose_name="email")
     phone = models.CharField(max_length=35, blank=True, null=True, verbose_name="телефон")
     city = models.CharField(max_length=100, blank=True, null=True, verbose_name="город")
