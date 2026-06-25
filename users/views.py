@@ -22,8 +22,9 @@ class PaymentListView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filterset_class = PaymentFilter
-    ordering_fields = ["payment_date"]
-    ordering = ["-payment_date"]
+    ordering_fields = ['payment_date']
+    ordering = ['-payment_date']
+    permission_classes = [IsAuthenticated]
 
 
 class UserListView(generics.ListAPIView):
