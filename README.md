@@ -173,6 +173,20 @@ lms/                                        # Корень проекта
 | amount | DecimalField | Сумма |
 | payment_method | CharField | Наличные / Перевод |
 
+### User (пользователь) — приложение `users`
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| email | EmailField | Уникальный email (используется как логин) |
+| phone | CharField (35) | Номер телефона (необязательно) |
+| city | CharField (100) | Город (необязательно) |
+| avatar | ImageField | Аватарка (загружается в `users/`) |
+| is_active | BooleanField | Активен ли пользователь |
+| is_staff | BooleanField | Имеет ли доступ в админку |
+| is_superuser | BooleanField | Является ли суперпользователем |
+| groups | ManyToManyField | Группы пользователя (PermissionsMixin) |
+| user_permissions | ManyToManyField | Права пользователя (PermissionsMixin) |
+
 ## Установка и запуск
 
 ### 1. Клонировать репозиторий
@@ -242,6 +256,12 @@ Authorization: Bearer <access-token>
 
 PUT /api/courses/1/
 Authorization: Bearer <access-token-другого-пользователя>
+
+**Проверка модератора:**
+1. Назначь пользователя модератором через админку
+2. Попробуй создать курс → 403 Forbidden
+3. Попробуй отредактировать любой курс → 200 OK
+4. Попробуй удалить курс → 403 Forbidden
 
 Лицензия
 MIT License
