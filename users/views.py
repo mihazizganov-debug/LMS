@@ -1,11 +1,15 @@
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
-
-from .models import Payment
-from .serializers import PaymentSerializer
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import User
-from .serializers import UserSerializer, UserCreateSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from lms.models import Course
+
+from .models import Payment, Subscription, User
+from .serializers import (PaymentSerializer, UserCreateSerializer,
+                          UserSerializer)
 
 
 class PaymentFilter(filters.FilterSet):
@@ -22,8 +26,8 @@ class PaymentListView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filterset_class = PaymentFilter
-    ordering_fields = ['payment_date']
-    ordering = ['-payment_date']
+    ordering_fields = ["payment_date"]
+    ordering = ["-payment_date"]
     permission_classes = [IsAuthenticated]
 
 
@@ -43,3 +47,23 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+
+class SubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        course_id = request.data.get("course")
+        course = get_object_or_404(Course, id=course_id)
+
+        subscription = Subscription.objects.filter(user=user, course=course)
+
+        if subscription.exists():
+            subscription.delete()
+            message = "Подписка удалена"
+        else:
+            Subscription.objects.create(user=user, course=course)
+            message = "Подписка добавлена"
+
+        return Response({"message": message})

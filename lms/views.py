@@ -1,27 +1,31 @@
-from rest_framework import viewsets, generics, permissions
+from rest_framework import generics, permissions, viewsets
+
+from users.permissions import IsModerator, IsNotModerator, IsOwner
+
 from .models import Course, Lesson
+from .paginators import CoursePaginator, LessonPaginator
 from .serializers import CourseSerializer, LessonSerializer
-from users.permissions import IsModerator, IsOwner, IsNotModerator
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    pagination_class = CoursePaginator
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.groups.filter(name='Модератор').exists():
+        if user.is_superuser or user.groups.filter(name="Модератор").exists():
             return Course.objects.all()
         return Course.objects.filter(owner=user)
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ["list", "retrieve"]:
             permission_classes = [permissions.IsAuthenticated]
-        elif self.action == 'create':
+        elif self.action == "create":
             permission_classes = [permissions.IsAuthenticated, IsNotModerator]
-        elif self.action in ['update', 'partial_update']:
+        elif self.action in ["update", "partial_update"]:
             permission_classes = [permissions.IsAuthenticated, IsModerator | IsOwner]
-        elif self.action == 'destroy':
+        elif self.action == "destroy":
             permission_classes = [permissions.IsAdminUser]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -34,17 +38,18 @@ class CourseViewSet(viewsets.ModelViewSet):
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LessonPaginator
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.groups.filter(name='Модератор').exists():
+        if user.is_superuser or user.groups.filter(name="Модератор").exists():
             return Lesson.objects.all()
         return Lesson.objects.filter(owner=user)
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             permission_classes = [permissions.IsAuthenticated]
-        elif self.request.method == 'POST':
+        elif self.request.method == "POST":
             permission_classes = [permissions.IsAuthenticated, IsNotModerator]
         return [permission() for permission in permission_classes]
 
@@ -58,16 +63,16 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.groups.filter(name='Модератор').exists():
+        if user.is_superuser or user.groups.filter(name="Модератор").exists():
             return Lesson.objects.all()
         return Lesson.objects.filter(owner=user)
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             permission_classes = [permissions.IsAuthenticated]
-        elif self.request.method in ['PUT', 'PATCH']:
+        elif self.request.method in ["PUT", "PATCH"]:
             permission_classes = [permissions.IsAuthenticated, IsModerator | IsOwner]
-        elif self.request.method == 'DELETE':
+        elif self.request.method == "DELETE":
             permission_classes = [permissions.IsAdminUser]
         else:
             permission_classes = [permissions.IsAuthenticated]
