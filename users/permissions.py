@@ -3,7 +3,7 @@ from rest_framework import permissions
 
 class IsModerator(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.groups.filter(name='Модератор').exists()
+        return request.user.groups.filter(name="Модератор").exists()
 
 
 class IsOwner(permissions.BasePermission):
@@ -13,4 +13,4 @@ class IsOwner(permissions.BasePermission):
 
 class IsNotModerator(permissions.BasePermission):
     def has_permission(self, request, view):
-        return not request.user.groups.filter(name='Модератор').exists()
+        return not request.user.groups.filter(name="Модератор").exists()
