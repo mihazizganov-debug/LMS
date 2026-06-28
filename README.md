@@ -14,6 +14,11 @@ API для онлайн-обучения на Django REST Framework.
 - ✅ Модель платежей (оплата курсов и уроков)
 - ✅ Фильтрация и сортировка платежей
 - ✅ Админ-панель для управления данными
+- ✅ Валидация ссылок (только YouTube)    (новое)
+- ✅ Модель подписки на обновления курса     (новое)
+- ✅ Признак подписки (`is_subscribed`) в списке курсов    (новое)
+- ✅ Пагинация для курсов и уроков (по 10 на страницу)    (новое)
+- ✅ Тесты для уроков и подписки    (новое)
 - 
 ## Технологии
 
@@ -59,6 +64,12 @@ API для онлайн-обучения на Django REST Framework.
 | PUT/PATCH | `/api/lessons/{id}/` | Обновить урок |
 | DELETE | `/api/lessons/{id}/` | Удалить урок  |
 
+### Подписки                           (новое)
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| POST | `/api/users/subscriptions/` | Добавить/удалить подписку на курс |
+
 ### Платежи
 
 | Метод | URL | Описание |
@@ -97,22 +108,24 @@ lms/                                        # Корень проекта
 │ ├── admin.py                              # Регистрация моделей Course и Lesson в админке
 │ ├── apps.py                               # Конфигурация приложения
 │ ├── models.py                             # Модели: Course, Lesson (связь один-ко-многим)
+│ ├── paginators.py                         # Пагинация             (новое)
 │ ├── serializers.py                        # Сериализаторы для API (CourseSerializer, LessonSerializer)
-│ ├── tests.py                              # Тесты (пустой, для будущего использования)
+│ ├── tests.py                              # Тесты                  (новое)
 │ ├── urls.py                               # Маршруты приложения (courses/, lessons/)
+│ ├── validators.py                         # Валидатор ссылок       (новое)
 │ └── views.py                              # Контроллеры: CourseViewSet (ViewSet), LessonListCreateView и LessonRetrieveUpdateDestroyView (Generic)
 │
 ├── users/                                  # Приложение пользователей
 │ ├── migrations/                           # Миграции пользователей
 │ │ └── _init_.py
 │ ├── fixtures/                             # Фикстуры для платежей 
-│ │ ├── groups.json                         # Группа "Модератор"  (новое) 
+│ │ ├── groups.json                         # Группа "Модератор" 
 │ │ └── payments.json                       # Платежи для тестов
 │ ├── init.py
 │ ├── admin.py                              # Регистрация модели User в админке (кастомный UserAdmin)
 │ ├── apps.py                               # Конфигурация приложения
-│ ├── models.py                             # Кастомная модель User (AbstractBaseUser, авторизация по email)
-│ ├── permissions.py                        # (IsModerator, IsOwner)  (новое)
+│ ├── models.py                             # User, Payment, Subscription    (новое)
+│ ├── permissions.py                        # (IsModerator, IsOwner) 
 │ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)
 │ ├── urls.py                               # Маршруты платежей (/payments/)
 │ ├── tests.py                              # Тесты (пустой)
@@ -137,30 +150,40 @@ lms/                                        # Корень проекта
 | Поле | Тип | Описание |
 |------|-----|----------|
 | email | EmailField | Уникальный email (используется как логин) |
-| phone | CharField (35) | Номер телефона (необязательно) |
-| city | CharField (100) | Город (необязательно) |
-| avatar | ImageField | Аватарка (загружается в `users/`) |
+| phone | CharField (35) | Номер телефона |
+| city | CharField (100) | Город |
+| avatar | ImageField | Аватарка |
 | is_active | BooleanField | Активен ли пользователь |
-| is_staff | BooleanField | Имеет ли доступ в админку |
-| is_superuser | BooleanField | Является ли суперпользователем |
+| is_staff | BooleanField | Доступ в админку |
+| is_superuser | BooleanField | Суперпользователь |
+| groups | ManyToManyField | Группы пользователя (PermissionsMixin) |
+| user_permissions | ManyToManyField | Права пользователя (PermissionsMixin) |
 
 ### Course (курс) — приложение `lms`
 
 | Поле | Тип | Описание |
 |------|-----|----------|
 | name | CharField (200) | Название курса |
-| preview | ImageField | Превью (загружается в `courses/`) |
-| description | TextField | Описание курса |
+| preview | ImageField | Превью |
+| description | TextField | Описание |
 
 ### Lesson (урок) — приложение `lms`
 
 | Поле | Тип | Описание |
 |------|-----|----------|
 | name | CharField (200) | Название урока |
-| description | TextField | Описание урока |
-| preview | ImageField | Превью (загружается в `lessons/`) |
-| video_url | URLField | Ссылка на видео (YouTube, Vimeo и др.) |
-| course | ForeignKey | Связь с курсом (при удалении курса удаляются все уроки) |
+| description | TextField | Описание |
+| preview | ImageField | Превью |
+| video_url | URLField | Ссылка на видео (только YouTube) |
+| course | ForeignKey | Связь с курсом |
+
+### Subscription (подписка) — приложение `users`              (новое)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| user | ForeignKey | Пользователь |
+| course | ForeignKey | Курс |
+| created_at | DateTimeField | Дата подписки |
 
 ### Payment (платеж) — приложение `users`
 
@@ -173,19 +196,6 @@ lms/                                        # Корень проекта
 | amount | DecimalField | Сумма |
 | payment_method | CharField | Наличные / Перевод |
 
-### User (пользователь) — приложение `users`
-
-| Поле | Тип | Описание |
-|------|-----|----------|
-| email | EmailField | Уникальный email (используется как логин) |
-| phone | CharField (35) | Номер телефона (необязательно) |
-| city | CharField (100) | Город (необязательно) |
-| avatar | ImageField | Аватарка (загружается в `users/`) |
-| is_active | BooleanField | Активен ли пользователь |
-| is_staff | BooleanField | Имеет ли доступ в админку |
-| is_superuser | BooleanField | Является ли суперпользователем |
-| groups | ManyToManyField | Группы пользователя (PermissionsMixin) |
-| user_permissions | ManyToManyField | Права пользователя (PermissionsMixin) |
 
 ## Установка и запуск
 
@@ -228,23 +238,22 @@ python manage.py runserver
 
 9. Проверка через Postman
 Регистрация:
-
 POST /api/users/create/
 {
     "email": "test@example.com",
     "password": "test1234"
 }
 
-Получение токена:
 
+Получение токена:
 POST /api/token/
 {
     "email": "test@example.com",
     "password": "test1234"
 }
 
-Создание курса (с токеном):
 
+Создание курса (с токеном):
 POST /api/courses/
 Authorization: Bearer <access-token>
 {
@@ -252,10 +261,57 @@ Authorization: Bearer <access-token>
     "description": "Описание"
 }
 
-Редактирование чужого курса → 403 Forbidden
 
+Редактирование чужого курса → 403 Forbidden
 PUT /api/courses/1/
 Authorization: Bearer <access-token-другого-пользователя>
+
+
+Подписка на курс                (новое)
+POST /api/users/subscriptions/
+Authorization: Bearer <access-token>
+{
+    "course": 1
+}
+→ {"message": "Подписка добавлена"}
+
+
+Удалить подписку (повторный запрос):     (новое)
+POST /api/users/subscriptions/
+Authorization: Bearer <access-token>
+{
+    "course": 1
+}
+→ {"message": "Подписка удалена"}
+
+ 
+Проверка is_subscribed                    (новое)
+GET /api/courses/
+Authorization: Bearer <access-token>
+
+В ответе у каждого курса будет поле is_subscribed: true/false.
+
+
+Валидация ссылок                               (новое)
+Попробуй создать урок с невалидной ссылкой:
+POST /api/lessons/
+Authorization: Bearer <access-token>
+{
+    "video_url": "https://vk.com/video"
+}
+→ 400 Bad Request
+
+
+Пагинация                               (новое)
+GET /api/courses/?page=2
+GET /api/courses/?page_size=5
+
+ 
+Запуск тестов                  (новое)
+python manage.py test lms.tests
+
+→ OK
+
 
 **Проверка модератора:**
 1. Назначь пользователя модератором через админку
