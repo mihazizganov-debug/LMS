@@ -25,23 +25,33 @@ class Migration(migrations.Migration):
                 ("password", models.CharField(max_length=128, verbose_name="password")),
                 (
                     "last_login",
-                    models.DateTimeField(blank=True, null=True, verbose_name="last login"),
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
                 ),
                 (
                     "email",
-                    models.EmailField(max_length=254, unique=True, verbose_name="email"),
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="email"
+                    ),
                 ),
                 (
                     "phone",
-                    models.CharField(blank=True, max_length=35, null=True, verbose_name="телефон"),
+                    models.CharField(
+                        blank=True, max_length=35, null=True, verbose_name="телефон"
+                    ),
                 ),
                 (
                     "city",
-                    models.CharField(blank=True, max_length=100, null=True, verbose_name="город"),
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="город"
+                    ),
                 ),
                 (
                     "avatar",
-                    models.ImageField(blank=True, null=True, upload_to="users/", verbose_name="аватар"),
+                    models.ImageField(
+                        blank=True, null=True, upload_to="users/", verbose_name="аватар"
+                    ),
                 ),
                 ("is_active", models.BooleanField(default=True)),
                 ("is_staff", models.BooleanField(default=False)),
