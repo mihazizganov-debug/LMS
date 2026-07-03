@@ -139,6 +139,7 @@ Content-Type: application/json
 
 
 ## Структура проекта
+
 ```
 lms/                                        # Корень проекта
 │
