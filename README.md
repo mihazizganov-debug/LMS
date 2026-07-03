@@ -119,8 +119,6 @@ API для онлайн-обучения на Django REST Framework.
 
 ### Создание платежа
 
-**Запрос:**
-```http
 POST /api/users/payments/create/
 Authorization: Bearer <access-token>
 Content-Type: application/json
