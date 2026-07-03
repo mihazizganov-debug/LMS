@@ -9,5 +9,9 @@ router.register(r"courses", views.CourseViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("lessons/", views.LessonListCreateView.as_view(), name="lesson-list"),
-    path("lessons/<int:pk>/", views.LessonRetrieveUpdateDestroyView.as_view(), name="lesson-detail"),
+    path(
+        "lessons/<int:pk>/",
+        views.LessonRetrieveUpdateDestroyView.as_view(),
+        name="lesson-detail",
+    ),
 ]
