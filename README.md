@@ -14,13 +14,15 @@ API для онлайн-обучения на Django REST Framework.
 - ✅ Модель платежей (оплата курсов и уроков)
 - ✅ Фильтрация и сортировка платежей
 - ✅ Админ-панель для управления данными
-- ✅ Валидация ссылок (только YouTube)    (новое)
-- ✅ Модель подписки на обновления курса     (новое)
-- ✅ Признак подписки (`is_subscribed`) в списке курсов    (новое)
-- ✅ Пагинация для курсов и уроков (по 10 на страницу)    (новое)
-- ✅ Переменные окружения (.env)     
+- ✅ Валидация ссылок (только YouTube)
+- ✅ Модель подписки на обновления курса
+- ✅ Признак подписки (`is_subscribed`) в списке курсов
+- ✅ Пагинация для курсов и уроков (по 10 на страницу)
+- ✅ Переменные окружения (.env)
 - ✅ Подключение PostgreSQL
 - ✅ Полное тестирование (CRUD уроков + подписки)
+- ✅Документация API (Swagger/ReDoc)                  (новое)
+- ✅Интеграция с Stripe (оплата курсов)               (новое)
 - 
 ## Технологии
 
@@ -29,9 +31,26 @@ API для онлайн-обучения на Django REST Framework.
 - Django REST Framework 3.17.1
 - django-filter
 - JWT (SimpleJWT)
-- PostgreSQL (с поддержкой SQLite для разработки)
+- PostgreSQL
 - Pillow (для работы с изображениями)
 - python-dotenv (для переменных окружения)
+- drf-yasg (для документации)           НОВОЕ
+- Stripe (для оплаты)                     НОВОЕ
+
+
+## 🔵 Документация API
+
+После запуска сервера документация доступна по адресам:
+
+| Страница | URL | Описание |
+|----------|-----|----------|
+| Swagger | `/swagger/` | Интерактивная документация с возможностью отправки запросов |
+| ReDoc | `/redoc/` | Детальная документация с описанием всех эндпоинтов |
+
+Примеры:
+- http://127.0.0.1:8000/swagger/
+- http://127.0.0.1:8000/redoc/
+
 
 ## Эндпоинты API
 
@@ -83,6 +102,8 @@ API для онлайн-обучения на Django REST Framework.
 | GET | `/api/users/payments/?payment_method=transfer` | Фильтр по способу оплаты |
 | GET | `/api/users/payments/?ordering=payment_date` | Сортировка по дате (по возрастанию) |
 | GET | `/api/users/payments/?ordering=-payment_date` | Сортировка по дате (по убыванию) |
+| 🔵 **POST** | 🔵 **`/api/users/payments/create/`** | 🔵 **Создание платежа через Stripe** |   (новое)
+
 
 ## Права доступа
 
@@ -92,6 +113,30 @@ API для онлайн-обучения на Django REST Framework.
 | **Пользователь** | ✅ (свои) | ✅ (свои) | ✅ (свои) | ✅ (свои) |
 | **Модератор** | ❌ | ✅ (все) | ✅ (все) | ❌ |
 | **Администратор** | ✅ | ✅ | ✅ | ✅ |
+
+
+## 🔵 Оплата через Stripe
+
+### Создание платежа
+
+**Запрос:**
+```http
+POST /api/users/payments/create/
+Authorization: Bearer <access-token>
+Content-Type: application/json
+
+{
+    "course_id": 1
+}
+
+Ответ:
+{
+    "payment_id": 1,
+    "payment_url": "https://checkout.stripe.com/...",
+    "amount": 1000,
+    "course": "Тестовый курс"
+}
+
 
 ## Структура проекта
 ```
@@ -111,11 +156,11 @@ lms/                                        # Корень проекта
 │ ├── admin.py                              # Регистрация моделей Course и Lesson в админке
 │ ├── apps.py                               # Конфигурация приложения
 │ ├── models.py                             # Модели: Course, Lesson (связь один-ко-многим)
-│ ├── paginators.py                         # Пагинация             (новое)
+│ ├── paginators.py                         # Пагинация             
 │ ├── serializers.py                        # Сериализаторы для API (CourseSerializer, LessonSerializer)
-│ ├── tests.py                              # Тесты                  (новое)
+│ ├── tests.py                              # Тесты                  
 │ ├── urls.py                               # Маршруты приложения (courses/, lessons/)
-│ ├── validators.py                         # Валидатор ссылок       (новое)
+│ ├── validators.py                         # Валидатор ссылок      
 │ └── views.py                              # Контроллеры: CourseViewSet (ViewSet), LessonListCreateView и LessonRetrieveUpdateDestroyView (Generic)
 │
 ├── users/                                  # Приложение пользователей
@@ -127,9 +172,10 @@ lms/                                        # Корень проекта
 │ ├── init.py
 │ ├── admin.py                              # Регистрация модели User в админке (кастомный UserAdmin)
 │ ├── apps.py                               # Конфигурация приложения
-│ ├── models.py                             # User, Payment, Subscription    (новое)
+│ ├── models.py                             # User, Payment, Subscription    
 │ ├── permissions.py                        # (IsModerator, IsOwner) 
 │ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)
+│ ├── services.py                           # Сервисные функции для Stripe       (новое)
 │ ├── urls.py                               # Маршруты платежей (/payments/)
 │ ├── tests.py                              # Тесты (пустой)
 │ └── views.py                              # PaymentListView (фильтрация, сортировка)
@@ -139,9 +185,7 @@ lms/                                        # Корень проекта
 ├── venv/                                   # Виртуальное окружение (не в git)
 ├── .env                                    # Переменные окружения (не в git)
 ├── .env.example                            # Шаблон переменных окружения
-├── .gitignore                              # Игнорируемые файлы (venv, pycache, db.sqlite3, .env)
-├── .env                                    # Файл переменных окружения        (новое)
-├── .env.example                            # Шаблон переменных окружения     (новове)
+├── .gitignore                              # Игнорируемые файлы (venv, pycache, db.sqlite3, .env) 
 ├── LICENSE                                 # Лицензия MIT
 ├── manage.py                               # Управляющий скрипт Django
 ├── README.md                               # Описание проекта
@@ -182,7 +226,7 @@ lms/                                        # Корень проекта
 | video_url | URLField | Ссылка на видео (только YouTube) |
 | course | ForeignKey | Связь с курсом |
 
-### Subscription (подписка) — приложение `users`              (новое)
+### Subscription (подписка) — приложение `users`            
 
 | Поле | Тип | Описание |
 |------|-----|----------|
@@ -200,6 +244,11 @@ lms/                                        # Корень проекта
 | lesson | ForeignKey | Оплаченный урок |
 | amount | DecimalField | Сумма |
 | payment_method | CharField | Наличные / Перевод |
+| stripe_product_id | CharField | ID продукта в Stripe |        НОВОЕ
+| stripe_price_id | CharField | ID цены в Stripe |              НОВОЕ
+| stripe_session_id | CharField | ID сессии в Stripe |          НОВОЕ
+| payment_url | URLField | Ссылка на оплату |                   НОВОЕ
+| status | CharField | Статус платежа |                         НОВОЕ
 
 
 ## Установка и запуск
@@ -240,6 +289,8 @@ python manage.py runserver
 Список курсов	http://127.0.0.1:8000/api/courses/
 Список уроков	http://127.0.0.1:8000/api/lessons/
 Админ-панель	http://127.0.0.1:8000/admin/
+Swagger	        http://127.0.0.1:8000/swagger/    (новое)
+ReDoc	        http://127.0.0.1:8000/redoc/      (новое)
 
 9. Проверка через Postman
 Регистрация:
@@ -272,7 +323,14 @@ PUT /api/courses/1/
 Authorization: Bearer <access-token-другого-пользователя>
 
 
-Подписка на курс                (новое)
+Создание платежа через Stripe:              (новое)
+POST /api/users/payments/create/
+Authorization: Bearer <access-token>
+{
+    "course_id": 1
+}
+
+Подписка на курс               
 POST /api/users/subscriptions/
 Authorization: Bearer <access-token>
 {
@@ -281,7 +339,7 @@ Authorization: Bearer <access-token>
 → {"message": "Подписка добавлена"}
 
 
-Удалить подписку (повторный запрос):     (новое)
+Удалить подписку (повторный запрос):     
 POST /api/users/subscriptions/
 Authorization: Bearer <access-token>
 {
@@ -290,14 +348,14 @@ Authorization: Bearer <access-token>
 → {"message": "Подписка удалена"}
 
  
-Проверка is_subscribed                    (новое)
+Проверка is_subscribed                    
 GET /api/courses/
 Authorization: Bearer <access-token>
 
 В ответе у каждого курса будет поле is_subscribed: true/false.
 
 
-Валидация ссылок                               (новое)
+Валидация ссылок                               
 Попробуй создать урок с невалидной ссылкой:
 POST /api/lessons/
 Authorization: Bearer <access-token>
@@ -307,12 +365,12 @@ Authorization: Bearer <access-token>
 → 400 Bad Request
 
 
-Пагинация                               (новое)
+Пагинация                               
 GET /api/courses/?page=2
 GET /api/courses/?page_size=5
 
  
-Запуск тестов                  (новое)
+Запуск тестов                  
 python manage.py test lms.tests
 
 → OK
