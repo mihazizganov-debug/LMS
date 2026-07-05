@@ -1,15 +1,22 @@
 from django.urls import path
-
-from . import views
-from .views import PaymentCreateView
+from .views import (
+    PaymentCreateView,
+    PaymentListView,
+    PaymentStatusView,
+    SubscriptionView,
+    UserCreateView,
+    UserDetailView,
+    UserListView,
+)
 
 app_name = "users"
 
 urlpatterns = [
-    path("", views.UserListView.as_view(), name="user-list"),
-    path("create/", views.UserCreateView.as_view(), name="user-create"),
-    path("<int:pk>/", views.UserDetailView.as_view(), name="user-detail"),
-    path("payments/", views.PaymentListView.as_view(), name="payment-list"),
-    path("subscriptions/", views.SubscriptionView.as_view(), name="subscription"),
+    path("", UserListView.as_view(), name="user-list"),
+    path("create/", UserCreateView.as_view(), name="user-create"),
+    path("<int:pk>/", UserDetailView.as_view(), name="user-detail"),
+    path("payments/", PaymentListView.as_view(), name="payment-list"),
     path("payments/create/", PaymentCreateView.as_view(), name="payment-create"),
+    path("payments/status/", PaymentStatusView.as_view(), name="payment-status"),
+    path("subscriptions/", SubscriptionView.as_view(), name="subscription"),
 ]
