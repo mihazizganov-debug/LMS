@@ -215,3 +215,7 @@ __marimo__/
 Thumbs.db
 
 dump.rdb
+
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+db.sqlite3
