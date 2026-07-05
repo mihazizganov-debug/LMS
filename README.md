@@ -100,14 +100,14 @@ API для онлайн-обучения на Django REST Framework.
 ### Платежи
 
 | Метод | URL | Описание |
-|-------|-----|----------|
+|-----|-----|----------|
 | GET | `/api/users/payments/` | Список платежей |
 | GET | `/api/users/payments/?course=1` | Фильтр по курсу |
 | GET | `/api/users/payments/?lesson=1` | Фильтр по уроку |
 | GET | `/api/users/payments/?payment_method=transfer` | Фильтр по способу оплаты |
 | GET | `/api/users/payments/?ordering=payment_date` | Сортировка по дате (по возрастанию) |
 | GET | `/api/users/payments/?ordering=-payment_date` | Сортировка по дате (по убыванию) |
-| 🔵 **POST** | 🔵 **`/api/users/payments/create/`** | 🔵 **Создание платежа через Stripe** |   (новое)
+| POST| `/api/users/payments/create/` | Создание платежа через Stripe|  
 
 
 ## Права доступа
@@ -265,11 +265,11 @@ lms/                                        # Корень проекта
 | lesson | ForeignKey | Оплаченный урок |
 | amount | DecimalField | Сумма |
 | payment_method | CharField | Наличные / Перевод |
-| stripe_product_id | CharField | ID продукта в Stripe |        НОВОЕ
-| stripe_price_id | CharField | ID цены в Stripe |              НОВОЕ
-| stripe_session_id | CharField | ID сессии в Stripe |          НОВОЕ
-| payment_url | URLField | Ссылка на оплату |                   НОВОЕ
-| status | CharField | Статус платежа |                         НОВОЕ
+| stripe_product_id | CharField | ID продукта в Stripe |        
+| stripe_price_id | CharField | ID цены в Stripe |              
+| stripe_session_id | CharField | ID сессии в Stripe |          
+| payment_url | URLField | Ссылка на оплату |                  
+| status | CharField | Статус платежа |                         
 
 
 ## Установка и запуск
@@ -310,8 +310,8 @@ python manage.py runserver
 Список курсов	http://127.0.0.1:8000/api/courses/
 Список уроков	http://127.0.0.1:8000/api/lessons/
 Админ-панель	http://127.0.0.1:8000/admin/
-Swagger	        http://127.0.0.1:8000/swagger/    (новое)
-ReDoc	        http://127.0.0.1:8000/redoc/      (новое)
+Swagger	        http://127.0.0.1:8000/swagger/    
+ReDoc	        http://127.0.0.1:8000/redoc/     
 
 9. Проверка через Postman
 Регистрация:
@@ -344,7 +344,7 @@ PUT /api/courses/1/
 Authorization: Bearer <access-token-другого-пользователя>
 
 
-Создание платежа через Stripe:              (новое)
+Создание платежа через Stripe:            
 POST /api/users/payments/create/
 Authorization: Bearer <access-token>
 {
