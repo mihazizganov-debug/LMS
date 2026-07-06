@@ -19,11 +19,15 @@ class Course(models.Model):
         related_name="courses",
         verbose_name="Владелец",
     )
-    price = models.DecimalField(  # НОВОЕ ПОЛЕ
+    price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=1000.00,
         verbose_name="Цена"
+    )
+    updated_at = models.DateTimeField(  # 🔵 НОВОЕ ПОЛЕ
+        auto_now=True,
+        verbose_name="Дата обновления"
     )
 
     def __str__(self):
