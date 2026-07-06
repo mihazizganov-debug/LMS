@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions, viewsets
+from django.utils import timezone
 
 from users.permissions import IsModerator, IsNotModerator, IsOwner
+from users.tasks import send_course_update_email
 
 from .models import Course, Lesson
 from .paginators import CoursePaginator, LessonPaginator
@@ -33,6 +35,25 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        """Обновление курса с отправкой уведомлений подписчикам"""
+        instance = self.get_object()
+        now = timezone.now()
+
+        # Сохраняем курс
+        serializer.save()
+
+        # Получаем обновлённый объект
+        updated_instance = Course.objects.get(id=instance.id)
+
+        # Проверяем, прошло ли 4 часа с последнего обновления
+        if updated_instance.updated_at:
+            time_diff = now - updated_instance.updated_at
+
+            # Если прошло больше 4 часов, отправляем письма подписчикам
+            if time_diff.total_seconds() > 4 * 3600:
+                send_course_update_email.delay(updated_instance.id)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):

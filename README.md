@@ -21,8 +21,11 @@ API для онлайн-обучения на Django REST Framework.
 - ✅ Переменные окружения (.env)
 - ✅ Подключение PostgreSQL
 - ✅ Полное тестирование (CRUD уроков + подписки)
-- ✅Документация API (Swagger/ReDoc)                  (новое)
-- ✅Интеграция с Stripe (оплата курсов)               (новое)
+- ✅ Документация API (Swagger/ReDoc)
+- ✅ Интеграция с Stripe (оплата курсов)
+- ✅Асинхронные задачи (Celery + Redis)         Новое
+- ✅Рассылка писем при обновлении курса         Новое 
+- ✅Периодическая блокировка неактивных пользователей     Новое
 - 
 ## Технологии
 
@@ -34,8 +37,10 @@ API для онлайн-обучения на Django REST Framework.
 - PostgreSQL
 - Pillow (для работы с изображениями)
 - python-dotenv (для переменных окружения)
-- drf-yasg (для документации)           НОВОЕ
-- Stripe (для оплаты)                     НОВОЕ
+- drf-yasg (для документации)          
+- Stripe (для оплаты)                     
+- Celery (для асинхронных задач)    Новое
+- Redis (брокер для Celery)         Новое
 
 
 ## 🔵 Документация API
@@ -95,14 +100,14 @@ API для онлайн-обучения на Django REST Framework.
 ### Платежи
 
 | Метод | URL | Описание |
-|-------|-----|----------|
+|-----|-----|----------|
 | GET | `/api/users/payments/` | Список платежей |
 | GET | `/api/users/payments/?course=1` | Фильтр по курсу |
 | GET | `/api/users/payments/?lesson=1` | Фильтр по уроку |
 | GET | `/api/users/payments/?payment_method=transfer` | Фильтр по способу оплаты |
 | GET | `/api/users/payments/?ordering=payment_date` | Сортировка по дате (по возрастанию) |
 | GET | `/api/users/payments/?ordering=-payment_date` | Сортировка по дате (по убыванию) |
-| 🔵 **POST** | 🔵 **`/api/users/payments/create/`** | 🔵 **Создание платежа через Stripe** |   (новое)
+| POST| `/api/users/payments/create/` | Создание платежа через Stripe|  
 
 
 ## Права доступа
@@ -136,6 +141,21 @@ Content-Type: application/json
 }
 
 
+## Асинхронные задачи (Celery + Redis)
+Запуск Celery
+# Запустить Redis (в отдельном терминале)
+redis-server
+
+# Запустить Celery Worker
+celery -A config worker -l INFO
+
+# Запустить Celery Beat (планировщик)
+celery -A config beat -l INFO
+
+send_course_update_email	Отправка писем подписчикам при обновлении курса (с проверкой 4 часов)
+deactivate_inactive_users	Блокировка пользователей, не заходивших более 30 дней (ежедневно в 3:00)
+
+
 ## Структура проекта
 
 ```
@@ -146,6 +166,7 @@ lms/                                        # Корень проекта
 │ ├── settings.py                           # Конфигурация Django (INSTALLED_APPS, DRF, база данных)
 │ ├── urls.py                               # Главные маршруты (подключение API и админки)
 │ ├── asgi.py                               # ASGI конфигурация
+│ ├── celery.py                             # Настройка Celery    (новое)
 │ └── wsgi.py                               # WSGI конфигурация
 │
 ├── lms/                                    # Приложение LMS (курсы и уроки)
@@ -174,7 +195,8 @@ lms/                                        # Корень проекта
 │ ├── models.py                             # User, Payment, Subscription    
 │ ├── permissions.py                        # (IsModerator, IsOwner) 
 │ ├── serializers.py                        # PaymentSerializer (сериализатор платежей)
-│ ├── services.py                           # Сервисные функции для Stripe       (новое)
+│ ├── services.py                           # Сервисные функции для Stripe       
+│ ├── tasks.py                              # Celery-задачи          (новое)
 │ ├── urls.py                               # Маршруты платежей (/payments/)
 │ ├── tests.py                              # Тесты (пустой)
 │ └── views.py                              # PaymentListView (фильтрация, сортировка)
@@ -243,11 +265,11 @@ lms/                                        # Корень проекта
 | lesson | ForeignKey | Оплаченный урок |
 | amount | DecimalField | Сумма |
 | payment_method | CharField | Наличные / Перевод |
-| stripe_product_id | CharField | ID продукта в Stripe |        НОВОЕ
-| stripe_price_id | CharField | ID цены в Stripe |              НОВОЕ
-| stripe_session_id | CharField | ID сессии в Stripe |          НОВОЕ
-| payment_url | URLField | Ссылка на оплату |                   НОВОЕ
-| status | CharField | Статус платежа |                         НОВОЕ
+| stripe_product_id | CharField | ID продукта в Stripe |        
+| stripe_price_id | CharField | ID цены в Stripe |              
+| stripe_session_id | CharField | ID сессии в Stripe |          
+| payment_url | URLField | Ссылка на оплату |                  
+| status | CharField | Статус платежа |                         
 
 
 ## Установка и запуск
@@ -288,8 +310,8 @@ python manage.py runserver
 Список курсов	http://127.0.0.1:8000/api/courses/
 Список уроков	http://127.0.0.1:8000/api/lessons/
 Админ-панель	http://127.0.0.1:8000/admin/
-Swagger	        http://127.0.0.1:8000/swagger/    (новое)
-ReDoc	        http://127.0.0.1:8000/redoc/      (новое)
+Swagger	        http://127.0.0.1:8000/swagger/    
+ReDoc	        http://127.0.0.1:8000/redoc/     
 
 9. Проверка через Postman
 Регистрация:
@@ -322,7 +344,7 @@ PUT /api/courses/1/
 Authorization: Bearer <access-token-другого-пользователя>
 
 
-Создание платежа через Stripe:              (новое)
+Создание платежа через Stripe:            
 POST /api/users/payments/create/
 Authorization: Bearer <access-token>
 {
